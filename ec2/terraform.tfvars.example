@@ -1,0 +1,74 @@
+# terraform.tfvars.example
+# 실제 사용시 terraform.tfvars로 복사 후 값 수정
+# terraform.tfvars는 .gitignore에 추가할 것
+
+aws_region   = "ap-northeast-2"
+environment  = "prod"
+project_name = "aegis"
+
+# VPC
+vpc_cidr             = "10.0.0.0/16"
+public_subnet_cidrs  = ["10.0.1.0/24", "10.0.2.0/24"]
+private_subnet_cidrs = ["10.0.10.0/24", "10.0.20.0/24"]
+availability_zones   = ["ap-northeast-2a", "ap-northeast-2c"]
+
+# RDS
+db_instance_class = "db.t3.micro"
+db_name           = "aegis"
+db_username       = "aegis_admin"
+
+# ElastiCache
+redis_node_type = "cache.t3.micro"
+
+# EC2 Instances
+ec2_instance_type    = "t3.medium"  # 2 vCPU, 4GB RAM
+ec2_ami_id           = ""           # 비워두면 최신 ECS-optimized AMI 자동 조회
+ec2_key_name         = ""           # SSH 키 (비워두면 SSH 비활성화)
+ec2_min_size         = 2
+ec2_max_size         = 6
+ec2_desired_capacity = 2
+
+# ECS Task Sizes
+backend_cpu    = 512
+backend_memory = 1024
+
+agent_ingest_cpu    = 512
+agent_ingest_memory = 1024
+
+agent_worker_cpu    = 1024
+agent_worker_memory = 2048
+
+# ECS - MediaMTX
+mediamtx_cpu       = 512
+mediamtx_memory    = 1024
+mediamtx_image_tag = "latest-ffmpeg"
+
+# ECS - Qdrant
+qdrant_cpu       = 512
+qdrant_memory    = 1024
+qdrant_image_tag = "latest"
+
+# EFS (Qdrant storage)
+efs_performance_mode = "generalPurpose"
+efs_throughput_mode  = "elastic"
+
+# Worker Auto Scaling
+worker_min_count        = 1
+worker_max_count        = 8
+worker_sqs_target_value = 5
+
+# Tailscale VPN (카메라 연결)
+enable_tailscale   = false
+tailscale_hostname = "aegis-mediamtx"
+camera_rtsp_url    = ""
+
+# Service Discovery
+service_discovery_namespace = "aegis.local"
+
+# GitHub OIDC (CI/CD)
+github_org   = ""
+github_repos = ["aegis-backend", "aegis-ai-agent", "aegis-frontend"]
+
+# Domain (비워두면 Route53/ACM 스킵)
+domain_name = ""
+# domain_name = "aegis.example.com"
