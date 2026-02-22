@@ -13,10 +13,10 @@ terraform {
   }
 
   backend "s3" {
-    bucket         = "aegis-terraform-state"
+    bucket         = "aegis-terraform-state-676323537989"
     key            = "ec2/terraform.tfstate"
     region         = "ap-northeast-2"
-    dynamodb_table = "aegis-terraform-lock"
+    dynamodb_table = "aegis-terraform-lock-676323537989"
     encrypt        = true
   }
 }

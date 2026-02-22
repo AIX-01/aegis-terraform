@@ -14,10 +14,10 @@ terraform {
 
   # S3 Backend (먼저 수동으로 S3 버킷 + DynamoDB 테이블 생성 필요)
   backend "s3" {
-    bucket         = "aegis-terraform-state"
+    bucket         = "aegis-terraform-state-676323537989"
     key            = "fargate/terraform.tfstate"
     region         = "ap-northeast-2"
-    dynamodb_table = "aegis-terraform-lock"
+    dynamodb_table = "aegis-terraform-lock-676323537989"
     encrypt        = true
   }
 }

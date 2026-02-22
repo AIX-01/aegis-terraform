@@ -71,7 +71,7 @@ locals {
     secrets = [
       {
         name      = "TS_AUTHKEY"
-        valueFrom = aws_secretsmanager_secret.tailscale_auth_key[0].arn
+        valueFrom = try(aws_secretsmanager_secret.tailscale_auth_key[0].arn, "")
       },
     ]
 
@@ -91,10 +91,10 @@ locals {
     }
   }
 
-  mediamtx_containers = var.enable_tailscale ? [
-    local.mediamtx_container,
-    local.tailscale_container,
-  ] : [local.mediamtx_container]
+  mediamtx_containers = concat(
+    [local.mediamtx_container],
+    var.enable_tailscale ? [local.tailscale_container] : []
+  )
 }
 
 resource "aws_ecs_task_definition" "mediamtx" {

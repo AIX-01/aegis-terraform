@@ -30,6 +30,8 @@ resource "aws_s3_bucket_lifecycle_configuration" "clips" {
     id     = "expire-old-clips"
     status = "Enabled"
 
+    filter {}
+
     # 90일 후 IA로 이동, 365일 후 삭제
     transition {
       days          = 90
