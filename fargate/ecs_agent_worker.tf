@@ -33,12 +33,20 @@ resource "aws_ecs_task_definition" "agent_worker" {
       # Qdrant (Cloud Map)
       { name = "QDRANT_HOST", value = "qdrant.${var.service_discovery_namespace}" },
       { name = "QDRANT_PORT", value = "6333" },
+
+      # LangSmith
+      { name = "LANGSMITH_TRACING", value = "true" },
+      { name = "LANGSMITH_PROJECT", value = "${var.project_name}-dev" },
     ]
 
     secrets = [
       {
-        name      = "AI_API_KEYS"
-        valueFrom = aws_secretsmanager_secret.ai_api_keys.arn
+        name      = "OPENAI_API_KEY"
+        valueFrom = "${aws_secretsmanager_secret.ai_api_keys.arn}:OPENAI_API_KEY::"
+      },
+      {
+        name      = "LANGSMITH_API_KEY"
+        valueFrom = "${aws_secretsmanager_secret.ai_api_keys.arn}:LANGSMITH_API_KEY::"
       },
     ]
 
