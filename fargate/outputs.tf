@@ -54,14 +54,9 @@ output "ecr_backend_url" {
   value       = aws_ecr_repository.backend.repository_url
 }
 
-output "ecr_agent_ingest_url" {
-  description = "ECR agent-ingest repository URL"
-  value       = aws_ecr_repository.agent_ingest.repository_url
-}
-
-output "ecr_agent_worker_url" {
-  description = "ECR agent-worker repository URL"
-  value       = aws_ecr_repository.agent_worker.repository_url
+output "ecr_agent_url" {
+  description = "ECR agent repository URL (single image, AGENT_MODE로 ingest/worker 분기)"
+  value       = aws_ecr_repository.agent.repository_url
 }
 
 # ── CloudFront ───────────────────────────────

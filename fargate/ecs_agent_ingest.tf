@@ -13,9 +13,12 @@ resource "aws_ecs_task_definition" "agent_ingest" {
 
   container_definitions = jsonencode([{
     name  = "agent-ingest"
-    image = "${aws_ecr_repository.agent_ingest.repository_url}:latest"
+    image = "${aws_ecr_repository.agent.repository_url}:latest"
 
     environment = [
+      # Agent 모드 (ingest: Producer만 실행)
+      { name = "AGENT_MODE", value = "ingest" },
+
       # SQS (윈도우 태스크 전송 대상)
       { name = "SQS_QUEUE_URL", value = aws_sqs_queue.analysis.url },
       { name = "AWS_REGION", value = var.aws_region },

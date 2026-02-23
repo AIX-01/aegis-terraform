@@ -13,9 +13,12 @@ resource "aws_ecs_task_definition" "agent_worker" {
 
   container_definitions = jsonencode([{
     name  = "agent-worker"
-    image = "${aws_ecr_repository.agent_worker.repository_url}:latest"
+    image = "${aws_ecr_repository.agent.repository_url}:latest"
 
     environment = [
+      # Agent 모드 (worker: Consumer만 실행)
+      { name = "AGENT_MODE", value = "worker" },
+
       # SQS (태스크 수신)
       { name = "SQS_QUEUE_URL", value = aws_sqs_queue.analysis.url },
       { name = "AWS_REGION", value = var.aws_region },

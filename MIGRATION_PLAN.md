@@ -183,7 +183,7 @@ src/ 수정 → git push → GitHub Actions
 | 서비스 | 베이스 이미지 | 빌드 |
 |---|---|---|
 | aegis-backend | Java 21 (multi-stage) | Gradle → JRE slim |
-| aegis-ai-agent | Python 3.12 | pip + system deps (ffmpeg 등) |
+| aegis-ai-agent | Python 3.12 | pip + system deps (ffmpeg 등), 단일 이미지 + AGENT_MODE 환경변수로 ingest/worker 분기 |
 | aegis-frontend | Node.js → S3 sync | next build → static export |
 
 ---
@@ -251,14 +251,14 @@ terraform-example/
 
 ---
 
-## 10. 예상 AWS 리소스 수: ~65개
+## 10. 예상 AWS 리소스 수: ~63개
 
 | 카테고리 | 수량 | 주요 항목 |
 |---|---|---|
 | 네트워크 | ~14 | VPC, 서브넷 4개, IGW, NAT, 라우팅, VPC Endpoints |
 | 보안 | ~14 | SG 8개 (ALB, Backend, Agent×2, MediaMTX, Qdrant, EFS, RDS, Redis), IAM 역할 5개 |
 | 데이터 | ~6 | RDS, Redis, S3 2개, SQS + DLQ |
-| 컨테이너 | ~18 | ECR 3개, 클러스터, Task Def 5개, Service 5개, ASG policies, EFS + mount targets |
+| 컨테이너 | ~17 | ECR 2개, 클러스터, Task Def 5개, Service 5개, ASG policies, EFS + mount targets |
 | 서비스 디스커버리 | ~4 | Cloud Map namespace, 서비스 등록 3개 |
 | 로드밸런서 | ~6 | ALB + TG + listener + rule, NLB + TG + listener |
 | 프론트엔드 | ~4 | S3, CloudFront, OAC, CF Function |
@@ -292,10 +292,11 @@ terraform-example/
 | 5 | Cloud Map | VPC 내부 서비스 간 DNS 기반 통신 |
 | 6 | Tailscale VPN | 카메라 연결, 포트포워딩/공인 IP 불필요 |
 | 7 | GitHub Actions OIDC | repo 목록 기반 접근 제어, 시크릿 키 불필요 |
-| 8 | 환경 비종속적 코드 | dev/main 동일, env var로 로컬/AWS 분기 |
-| 9 | Terraform 별도 repo | aegis-terraform으로 인프라 코드 분리 |
-| 10 | ap-northeast-2 (서울) | 대상 사용자 위치 |
-| 11 | VPC Endpoints | NAT Gateway GB당 과금 회피 |
+| 8 | AI Agent 단일 ECR 이미지 | 하나의 Dockerfile, ECS 태스크에서 `AGENT_MODE=ingest/worker`로 역할 분기 |
+| 9 | 환경 비종속적 코드 | dev/main 동일, env var로 로컬/AWS 분기 |
+| 10 | Terraform 별도 repo | aegis-terraform으로 인프라 코드 분리 |
+| 11 | ap-northeast-2 (서울) | 대상 사용자 위치 |
+| 12 | VPC Endpoints | NAT Gateway GB당 과금 회피 |
 
 ---
 
