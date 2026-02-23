@@ -89,6 +89,8 @@ S3          = aegis-frontend-676323537989, aegis-clips-676323537989
 | `pull_request` → main | `fargate/**` 또는 `ec2/**` 변경 시 | `terraform plan` 실행, PR에 결과 코멘트 |
 | `push` → main | `fargate/**` 또는 `ec2/**` 변경 시 | `terraform apply -auto-approve` |
 
+> **Note**: `paths` 필터로 `fargate/**` 또는 `ec2/**` 변경만 감지. 루트 파일(`.md`, `.github/` 등)만 변경 시 워크플로우가 트리거되지 않음.
+
 각 서비스 레포에도 별도 deploy workflow 존재:
 
 | 레포 | 워크플로우 | 트리거 | 동작 |
