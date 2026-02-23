@@ -162,6 +162,11 @@ VPC (10.0.0.0/16)
 - `github_org` + `github_repos` 변수로 허용 리포지토리 제어
 - 시크릿 키 관리 불필요 (OIDC 토큰 기반)
 
+#### Troubleshooting: OIDC 인증 실패
+`aegis-terraform` repo push 시 `sts:AssumeRoleWithWebIdentity` 에러 발생.
+서비스 레포(backend, frontend, ai-agent)는 정상이나 **terraform 레포 자체**가 IAM Role trust policy의 허용 목록에서 누락된 것이 원인.
+`github_repos` 변수에 `aegis-terraform`이 포함되어 있는지 확인 필요. → [ISSUES.md #2](./ISSUES.md#issue-2-github-actions-oidc-인증-실패-미해결)
+
 ### 인프라 워크플로우
 
 ```
@@ -372,6 +377,11 @@ terraform-example/
 - 스트리밍: MediaMTX WHEP → CloudFront `/stream/*` 경로로 라우팅
 - `next.config.js`: `output: 'export'` 설정 추가 (정적 빌드)
 - 빌드: `next build` → S3 sync → CloudFront invalidation
+
+#### Troubleshooting: CloudFront SPA rewrite 무한 새로고침
+`cloudfront.tf`의 SPA rewrite 함수가 **전통 SPA 방식**(모든 경로 → `/index.html`)으로 작성되어 있었으나, Next.js `output: 'export'` + `trailingSlash: true`는 **경로별 index.html**을 생성함(`/auth/index.html`, `/events/index.html` 등).
+모든 경로가 루트 `/index.html`로 리라이트되면서 인증 리다이렉트 루프 발생.
+각 경로의 `index.html`로 매핑하도록 수정하여 해결. → [ISSUES.md #1](./ISSUES.md#issue-1-cloudfront-무한-새로고침-2026-02-23)
 
 ### AI Agent 코드 변경
 - `config.py`: 모든 하드코딩 → `os.getenv('KEY', 'default')` 패턴
