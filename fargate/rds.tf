@@ -12,7 +12,7 @@ resource "aws_db_instance" "postgres" {
   identifier = "${var.project_name}-postgres"
 
   engine         = "postgres"
-  engine_version = "16.4"
+  engine_version = "18.2"
   instance_class = var.db_instance_class
 
   db_name  = var.db_name
@@ -30,7 +30,7 @@ resource "aws_db_instance" "postgres" {
   multi_az            = false # 비용 절감 (프로덕션에서는 true 권장)
   publicly_accessible = false
 
-  backup_retention_period = 7
+  backup_retention_period = 1  # 프리티어 제한
   backup_window           = "03:00-04:00" # KST 12:00-13:00
   maintenance_window      = "mon:04:00-mon:05:00"
 
