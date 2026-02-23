@@ -350,16 +350,39 @@ terraform-example/
 
 서비스 repo 코드 변경은 각 repo의 git 상태 정리 후 별도 진행:
 
+### Spring Boot Backend 코드 변경
+- `application.properties`: 이미 `${ENV_VAR:default}` 패턴 사용 중 → 코드 변경 최소
+- 환경변수 매핑 (ECS task definition에서 주입):
+  - `DB_URL` → RDS endpoint (`jdbc:postgresql://aegis-postgres.xxx.rds.amazonaws.com:5432/aegis`)
+  - `DB_USERNAME`, `DB_PASSWORD` → Secrets Manager
+  - `REDIS_HOST` → ElastiCache endpoint
+  - `AWS_S3_BUCKET` → `aegis-clips-676323537989`
+  - `AWS_S3_ENDPOINT` → 빈 값 (AWS S3 네이티브 사용, MinIO endpoint 불필요)
+  - `AWS_S3_ACCESS_KEY`, `AWS_S3_SECRET_KEY` → ECS Task Role로 대체 (IAM 인증)
+  - `MEDIAMTX_API_URL` → `http://mediamtx.aegis.local:9997` (Cloud Map)
+  - `CORS_ALLOWED_ORIGINS` → CloudFront 도메인
+  - `JWT_SECRET` → Secrets Manager
+- S3 클라이언트: MinIO 호환 → AWS S3 네이티브 전환 (endpoint 제거, IAM 인증)
+
+### Next.js Frontend 코드 변경
+- 배포 방식: S3 정적 호스팅 + CloudFront CDN (SSR 미사용)
+- API 호출: 이미 상대경로 `/api/...` 사용 → CloudFront가 ALB로 라우팅하므로 코드 변경 없음
+- SSE: `/api/notifications/stream` → CloudFront SSE 경로로 라우팅 (Terraform에서 설정 완료)
+- 스트리밍: MediaMTX WHEP → CloudFront `/stream/*` 경로로 라우팅
+- `next.config.js`: `output: 'export'` 설정 추가 (정적 빌드)
+- 빌드: `next build` → S3 sync → CloudFront invalidation
+
 ### AI Agent 코드 변경
 - `config.py`: 모든 하드코딩 → `os.getenv('KEY', 'default')` 패턴
 - `queue_adapter.py` (신규): LocalQueueAdapter / SQSQueueAdapter
 - `app.py`: `AGENT_MODE` 환경변수로 ingest/worker/all 모드 분리
+- Terraform에 `AGENT_MODE` 환경변수 추가 (ingest: Producer만, worker: Consumer만)
 
 ### Dockerfiles
-- `aegis-backend/Dockerfile`: Multi-stage Java 21 빌드
-- `aegis-ai-agent/Dockerfile`: Python 3.12 + system deps
+- `aegis-backend/Dockerfile`: Multi-stage Java 21 빌드 (Gradle → JRE slim)
+- `aegis-ai-agent/Dockerfile`: Python 3.12 + system deps (ffmpeg 등)
 
 ### GitHub Actions Workflows
-- `aegis-backend/.github/workflows/deploy.yml`
-- `aegis-ai-agent/.github/workflows/deploy.yml`
-- `aegis-frontend/.github/workflows/deploy.yml`
+- `aegis-backend/.github/workflows/deploy.yml`: Docker build → ECR push → ECS 서비스 업데이트
+- `aegis-ai-agent/.github/workflows/deploy.yml`: Docker build → ECR push → ECS 서비스 업데이트
+- `aegis-frontend/.github/workflows/deploy.yml`: next build → S3 sync → CloudFront invalidation
