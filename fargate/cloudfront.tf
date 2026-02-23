@@ -11,8 +11,9 @@ resource "aws_cloudfront_origin_access_control" "frontend" {
   signing_protocol                  = "sigv4"
 }
 
-# ── SPA Routing Function ─────────────────────
-# /about, /dashboard 등 SPA 경로를 index.html로 리라이트
+# ── Static Export Routing Function ────────────
+# Next.js static export (trailingSlash: true) 경로를 index.html로 리라이트
+# /auth → /auth/index.html, /events/ → /events/index.html 등
 
 resource "aws_cloudfront_function" "spa_rewrite" {
   name    = "${var.project_name}-spa-rewrite"
@@ -29,8 +30,13 @@ resource "aws_cloudfront_function" "spa_rewrite" {
         return request;
       }
 
-      // SPA 라우트는 index.html로 리라이트
-      request.uri = '/index.html';
+      // trailing slash가 있으면 index.html 추가
+      if (uri.endsWith('/')) {
+        request.uri = uri + 'index.html';
+      } else {
+        request.uri = uri + '/index.html';
+      }
+
       return request;
     }
   EOF
