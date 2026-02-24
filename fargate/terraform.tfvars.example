@@ -61,7 +61,7 @@ service_discovery_namespace = "aegis.local"
 
 # GitHub OIDC (CI/CD)
 github_org   = "" # e.g., "your-github-org"
-github_repos = ["aegis-backend", "aegis-ai-agent", "aegis-frontend"]
+github_repos = ["aegis-backend", "aegis-ai-agent", "aegis-frontend", "aegis-terraform"]
 
 # Domain (비워두면 Route53/ACM 스킵)
 domain_name = ""

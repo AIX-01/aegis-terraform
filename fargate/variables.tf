@@ -223,7 +223,7 @@ variable "github_org" {
 variable "github_repos" {
   description = "List of GitHub repo names allowed to assume the deploy role"
   type        = list(string)
-  default     = ["aegis-backend", "aegis-ai-agent", "aegis-frontend"]
+  default     = ["aegis-backend", "aegis-ai-agent", "aegis-frontend", "aegis-terraform"]
 }
 
 # ── Domain ───────────────────────────────────
