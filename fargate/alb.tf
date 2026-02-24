@@ -127,4 +127,12 @@ resource "aws_lb_listener_rule" "mediamtx_whep" {
       values = ["/stream/*"]
     }
   }
+
+  # /stream/cam1/whep → /cam1/whep (MediaMTX expects no prefix)
+  transform {
+    url_path {
+      regex   = "^/stream/(.*)"
+      replace = "/$1"
+    }
+  }
 }
