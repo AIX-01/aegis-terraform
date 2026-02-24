@@ -15,6 +15,21 @@ resource "aws_cloudfront_origin_access_control" "frontend" {
 # Next.js static export (trailingSlash: true) 경로를 index.html로 리라이트
 # /auth → /auth/index.html, /events/ → /events/index.html 등
 
+resource "aws_cloudfront_function" "stream_rewrite" {
+  name    = "${var.project_name}-stream-rewrite"
+  runtime = "cloudfront-js-2.0"
+  publish = true
+
+  code = <<-EOF
+    function handler(event) {
+      var request = event.request;
+      request.uri = request.uri.replace(/^\/stream/, '');
+      if (request.uri === '') request.uri = '/';
+      return request;
+    }
+  EOF
+}
+
 resource "aws_cloudfront_function" "spa_rewrite" {
   name    = "${var.project_name}-spa-rewrite"
   runtime = "cloudfront-js-2.0"
@@ -102,7 +117,7 @@ resource "aws_cloudfront_distribution" "frontend" {
     origin_request_policy_id = "216adef6-5c7f-47e4-b989-5492eafa07d3" # AllViewer
   }
 
-  # /stream/* → ALB MediaMTX WHEP
+  # /stream/* → ALB MediaMTX WHEP (strip /stream prefix)
   ordered_cache_behavior {
     path_pattern           = "/stream/*"
     allowed_methods        = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
@@ -112,6 +127,11 @@ resource "aws_cloudfront_distribution" "frontend" {
 
     cache_policy_id          = "4135ea2d-6df8-44a3-9df3-4b5a84be39ad" # CachingDisabled
     origin_request_policy_id = "216adef6-5c7f-47e4-b989-5492eafa07d3" # AllViewer
+
+    function_association {
+      event_type   = "viewer-request"
+      function_arn = aws_cloudfront_function.stream_rewrite.arn
+    }
   }
 
   # SSE 엔드포인트 → ALB Backend

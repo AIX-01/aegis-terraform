@@ -285,3 +285,25 @@ resource "aws_security_group" "redis" {
 
   tags = { Name = "${var.project_name}-redis-sg" }
 }
+
+# ── Backend: internal service access (separate rules to avoid cycles) ──
+
+resource "aws_security_group_rule" "backend_from_mediamtx" {
+  type                     = "ingress"
+  description              = "MediaMTX webhooks (auth/sync)"
+  from_port                = 8080
+  to_port                  = 8080
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.backend.id
+  source_security_group_id = aws_security_group.mediamtx.id
+}
+
+resource "aws_security_group_rule" "backend_from_agent_worker" {
+  type                     = "ingress"
+  description              = "Agent Worker API calls"
+  from_port                = 8080
+  to_port                  = 8080
+  protocol                 = "tcp"
+  security_group_id        = aws_security_group.backend.id
+  source_security_group_id = aws_security_group.agent_worker.id
+}
