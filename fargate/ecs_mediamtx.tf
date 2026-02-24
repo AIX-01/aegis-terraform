@@ -136,6 +136,16 @@ resource "aws_ecs_service" "mediamtx" {
     container_port   = 8189
   }
 
+  # NLB: SRT ingest (only when Tailscale disabled)
+  dynamic "load_balancer" {
+    for_each = var.enable_tailscale ? [] : [1]
+    content {
+      target_group_arn = aws_lb_target_group.mediamtx_srt[0].arn
+      container_name   = "mediamtx"
+      container_port   = 8890
+    }
+  }
+
   # Cloud Map service discovery
   service_registries {
     registry_arn = aws_service_discovery_service.mediamtx.arn
