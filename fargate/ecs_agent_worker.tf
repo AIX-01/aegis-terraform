@@ -15,6 +15,8 @@ resource "aws_ecs_task_definition" "agent_worker" {
     name  = "agent-worker"
     image = "${aws_ecr_repository.agent.repository_url}:latest"
 
+    command = ["python", "-m", "src.app", "--real-vlm", "--real-backend"]
+
     environment = [
       # Agent 모드 (worker: Consumer만 실행)
       { name = "AGENT_MODE", value = "worker" },
@@ -37,9 +39,14 @@ resource "aws_ecs_task_definition" "agent_worker" {
       { name = "QDRANT_HOST", value = "qdrant.${var.service_discovery_namespace}" },
       { name = "QDRANT_PORT", value = "6333" },
 
+      # VLM (RunPod)
+      { name = "VLM_ENDPOINT", value = "https://w2b6m5sf8595cn-8000.proxy.runpod.net/v1" },
+      { name = "VLM_API_KEY", value = "sk-IrR7Bwxtin0haWagUnPrBgq5PurnUz86" },
+      { name = "VLM_MODEL_ID", value = "AIX-01/Qwen3-VL-2B-Instruct-unsloth-bnb-4bit-3000steps-r64-b8-merged-16bit" },
+
       # LangSmith
       { name = "LANGSMITH_TRACING", value = "true" },
-      { name = "LANGSMITH_PROJECT", value = "${var.project_name}-dev" },
+      { name = "LANGSMITH_PROJECT", value = "${var.project_name}-prd" },
     ]
 
     secrets = [

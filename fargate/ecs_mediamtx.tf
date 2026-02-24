@@ -33,9 +33,19 @@ locals {
       { name = "MTX_SRT", value = "yes" },
       { name = "MTX_SRTADDRESS", value = ":8890" },
       { name = "MTX_HLS", value = "no" },
+      { name = "MTX_RTMP", value = "no" },
 
       # WHEP (WebRTC HTTP)
       { name = "MTX_WEBRTCHTTPADDRESS", value = ":8889" },
+
+      # Auth: delegate to Backend
+      { name = "MTX_AUTHMETHOD", value = "http" },
+      { name = "MTX_AUTHHTTPADDRESS", value = "http://backend.${var.service_discovery_namespace}:8080/internal/mediamtx/auth" },
+
+      # Hooks: notify Backend on stream start/stop
+      { name = "MTX_PATHS_ALL_RUNONREADY", value = "wget -q -O - --header='Content-Type: application/json' --post-data='{}' http://backend.${var.service_discovery_namespace}:8080/internal/mediamtx/sync" },
+      { name = "MTX_PATHS_ALL_RUNONREADYRESTART", value = "no" },
+      { name = "MTX_PATHS_ALL_RUNONNOTREADY", value = "wget -q -O - --header='Content-Type: application/json' --post-data='{}' http://backend.${var.service_discovery_namespace}:8080/internal/mediamtx/sync" },
     ]
 
     logConfiguration = {

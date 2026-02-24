@@ -15,6 +15,8 @@ resource "aws_ecs_task_definition" "agent_ingest" {
     name  = "agent-ingest"
     image = "${aws_ecr_repository.agent.repository_url}:latest"
 
+    command = ["python", "-m", "src.app", "--real-vlm", "--real-backend"]
+
     environment = [
       # Agent 모드 (ingest: Producer만 실행)
       { name = "AGENT_MODE", value = "ingest" },

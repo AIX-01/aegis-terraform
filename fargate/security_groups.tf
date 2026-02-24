@@ -128,13 +128,16 @@ resource "aws_security_group" "mediamtx" {
     security_groups = [aws_security_group.alb.id]
   }
 
-  # SRT ingest - VPC only (Tailscale or direct)
-  ingress {
-    description = "SRT from VPC"
-    from_port   = 8890
-    to_port     = 8890
-    protocol    = "udp"
-    cidr_blocks = [var.vpc_cidr]
+  # SRT ingest - conditional on Tailscale
+  dynamic "ingress" {
+    for_each = [var.enable_tailscale ? var.vpc_cidr : "0.0.0.0/0"]
+    content {
+      description = var.enable_tailscale ? "SRT from VPC (Tailscale)" : "SRT UDP from NLB/Internet"
+      from_port   = 8890
+      to_port     = 8890
+      protocol    = "udp"
+      cidr_blocks = [ingress.value]
+    }
   }
 
   # WebRTC UDP - Public (NLB forwards)
