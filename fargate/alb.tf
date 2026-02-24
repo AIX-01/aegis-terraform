@@ -124,7 +124,24 @@ resource "aws_lb_listener_rule" "mediamtx_whep" {
 
   condition {
     path_pattern {
-      values = ["*/whep"]
+      values = ["/*/whep"]
+    }
+  }
+}
+
+# HTTP listener (port 80) - CloudFront uses http-only when no domain
+resource "aws_lb_listener_rule" "mediamtx_whep_http" {
+  listener_arn = aws_lb_listener.http_redirect.arn
+  priority     = 10
+
+  action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.mediamtx_whep.arn
+  }
+
+  condition {
+    path_pattern {
+      values = ["/*/whep"]
     }
   }
 }

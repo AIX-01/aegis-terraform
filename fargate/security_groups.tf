@@ -50,6 +50,16 @@ resource "aws_security_group" "backend" {
     security_groups = [aws_security_group.alb.id]
   }
 
+  # Internal services (MediaMTX webhooks, Agent Worker API calls)
+  # VPC CIDR을 사용하여 순환참조 방지 (SG 참조 대신)
+  ingress {
+    description = "From VPC internal services (MediaMTX, Agents)"
+    from_port   = 8080
+    to_port     = 8080
+    protocol    = "tcp"
+    cidr_blocks = [var.vpc_cidr]
+  }
+
   egress {
     from_port   = 0
     to_port     = 0
@@ -286,24 +296,3 @@ resource "aws_security_group" "redis" {
   tags = { Name = "${var.project_name}-redis-sg" }
 }
 
-# ── Backend: internal service access (separate rules to avoid cycles) ──
-
-resource "aws_security_group_rule" "backend_from_mediamtx" {
-  type                     = "ingress"
-  description              = "MediaMTX webhooks (auth/sync)"
-  from_port                = 8080
-  to_port                  = 8080
-  protocol                 = "tcp"
-  security_group_id        = aws_security_group.backend.id
-  source_security_group_id = aws_security_group.mediamtx.id
-}
-
-resource "aws_security_group_rule" "backend_from_agent_worker" {
-  type                     = "ingress"
-  description              = "Agent Worker API calls"
-  from_port                = 8080
-  to_port                  = 8080
-  protocol                 = "tcp"
-  security_group_id        = aws_security_group.backend.id
-  source_security_group_id = aws_security_group.agent_worker.id
-}
