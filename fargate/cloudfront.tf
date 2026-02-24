@@ -102,9 +102,9 @@ resource "aws_cloudfront_distribution" "frontend" {
     origin_request_policy_id = "216adef6-5c7f-47e4-b989-5492eafa07d3" # AllViewer
   }
 
-  # /stream/* → ALB MediaMTX WHEP (prefix strip은 ALB 리스너 룰에서 처리)
+  # */whep → ALB MediaMTX WHEP (no prefix, direct path)
   ordered_cache_behavior {
-    path_pattern           = "/stream/*"
+    path_pattern           = "*/whep"
     allowed_methods        = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
     cached_methods         = ["GET", "HEAD"]
     target_origin_id       = "alb-backend"

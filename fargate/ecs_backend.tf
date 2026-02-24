@@ -41,6 +41,7 @@ resource "aws_ecs_task_definition" "backend" {
 
       # MediaMTX API (Cloud Map)
       { name = "MEDIAMTX_API_URL", value = "http://mediamtx.${var.service_discovery_namespace}:9997" },
+      { name = "MEDIAMTX_WEBRTC_URL", value = "" },
 
       # Clip download (CloudFront)
       { name = "CLIP_DOWNLOAD_ENDPOINT", value = "https://${aws_cloudfront_distribution.frontend.domain_name}" },
