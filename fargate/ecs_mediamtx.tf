@@ -43,9 +43,9 @@ locals {
       { name = "MTX_AUTHHTTPADDRESS", value = "http://backend.${var.service_discovery_namespace}:8080/internal/mediamtx/auth" },
 
       # Hooks: notify Backend on stream start/stop
-      { name = "MTX_PATHS_ALL_RUNONREADY", value = "wget -q -O - --header='Content-Type: application/json' --post-data='{}' http://backend.${var.service_discovery_namespace}:8080/internal/mediamtx/sync" },
-      { name = "MTX_PATHS_ALL_RUNONREADYRESTART", value = "no" },
-      { name = "MTX_PATHS_ALL_RUNONNOTREADY", value = "wget -q -O - --header='Content-Type: application/json' --post-data='{}' http://backend.${var.service_discovery_namespace}:8080/internal/mediamtx/sync" },
+      { name = "MTX_PATHDEFAULTS_RUNONREADY", value = "wget -q -O - --header='Content-Type: application/json' --post-data='{}' http://backend.${var.service_discovery_namespace}:8080/internal/mediamtx/sync" },
+      { name = "MTX_PATHDEFAULTS_RUNONREADYRESTART", value = "no" },
+      { name = "MTX_PATHDEFAULTS_RUNONNOTREADY", value = "wget -q -O - --header='Content-Type: application/json' --post-data='{}' http://backend.${var.service_discovery_namespace}:8080/internal/mediamtx/sync" },
     ]
 
     logConfiguration = {
