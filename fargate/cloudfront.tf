@@ -104,7 +104,7 @@ resource "aws_cloudfront_distribution" "frontend" {
 
   # */whep → ALB MediaMTX WHEP (no prefix, direct path)
   ordered_cache_behavior {
-    path_pattern           = "*/whep"
+    path_pattern           = "/*/whep"
     allowed_methods        = ["DELETE", "GET", "HEAD", "OPTIONS", "PATCH", "POST", "PUT"]
     cached_methods         = ["GET", "HEAD"]
     target_origin_id       = "alb-backend"

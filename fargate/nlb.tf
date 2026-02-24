@@ -17,7 +17,7 @@ resource "aws_lb" "nlb" {
 
 resource "aws_lb_target_group" "mediamtx_webrtc" {
   name        = "${var.project_name}-mtx-webrtc-tg"
-  port        = 8189
+  port        = 8889
   protocol    = "UDP"
   vpc_id      = aws_vpc.main.id
   target_type = "ip" # Fargate awsvpc
@@ -39,7 +39,7 @@ resource "aws_lb_target_group" "mediamtx_webrtc" {
 
 resource "aws_lb_listener" "mediamtx_webrtc" {
   load_balancer_arn = aws_lb.nlb.arn
-  port              = 8189
+  port              = 8889
   protocol          = "UDP"
 
   default_action {

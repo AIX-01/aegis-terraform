@@ -12,9 +12,8 @@ locals {
     portMappings = [
       { containerPort = 9997, protocol = "tcp" },  # API
       { containerPort = 8554, protocol = "tcp" },  # RTSP
-      { containerPort = 8889, protocol = "tcp" },  # WHEP (HTTP)
+      { containerPort = 8889, protocol = "tcp" },  # WebRTC (WHEP HTTP + ICE unified)
       { containerPort = 8890, protocol = "udp" },  # SRT
-      { containerPort = 8189, protocol = "udp" },  # WebRTC
     ]
 
     environment = [
@@ -29,14 +28,12 @@ locals {
       { name = "MTX_RTSP", value = "yes" },
       { name = "MTX_RTSPADDRESS", value = ":8554" },
       { name = "MTX_WEBRTC", value = "yes" },
-      { name = "MTX_WEBRTCADDRESS", value = ":8189" },
+      { name = "MTX_WEBRTCADDRESS", value = ":8889" },
       { name = "MTX_SRT", value = "yes" },
       { name = "MTX_SRTADDRESS", value = ":8890" },
       { name = "MTX_HLS", value = "no" },
       { name = "MTX_RTMP", value = "no" },
 
-      # WHEP (WebRTC HTTP)
-      { name = "MTX_WEBRTCHTTPADDRESS", value = ":8889" },
 
       # Auth: delegate to Backend
       { name = "MTX_AUTHMETHOD", value = "http" },
@@ -143,7 +140,7 @@ resource "aws_ecs_service" "mediamtx" {
   load_balancer {
     target_group_arn = aws_lb_target_group.mediamtx_webrtc.arn
     container_name   = "mediamtx"
-    container_port   = 8189
+    container_port   = 8889
   }
 
   # NLB: SRT ingest (only when Tailscale disabled)

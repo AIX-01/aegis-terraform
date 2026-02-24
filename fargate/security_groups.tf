@@ -153,8 +153,8 @@ resource "aws_security_group" "mediamtx" {
   # WebRTC UDP - Public (NLB forwards)
   ingress {
     description = "WebRTC UDP from NLB/Internet"
-    from_port   = 8189
-    to_port     = 8189
+    from_port   = 8889
+    to_port     = 8889
     protocol    = "udp"
     cidr_blocks = ["0.0.0.0/0"]
   }
