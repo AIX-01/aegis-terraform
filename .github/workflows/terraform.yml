@@ -51,17 +51,18 @@ jobs:
         run: terraform validate
 
       - name: Terraform Plan
+        id: plan
         working-directory: ${{ env.WORKING_DIR }}
         run: terraform plan -no-color -out=tfplan
-        continue-on-error: true
 
       - name: Comment Plan on PR
         uses: actions/github-script@v7
-        if: github.event_name == 'pull_request'
+        if: github.event_name == 'pull_request' && always()
+        env:
+          PLAN_OUTPUT: ${{ steps.plan.outputs.stdout }}
         with:
           script: |
-            const fs = require('fs');
-            const planOutput = '${{ steps.plan.outputs.stdout }}' || 'Plan output not captured';
+            const planOutput = process.env.PLAN_OUTPUT || 'Plan output not captured';
             const body = `### Terraform Plan\n\`\`\`\n${planOutput.substring(0, 60000)}\n\`\`\``;
             github.rest.issues.createComment({
               issue_number: context.issue.number,
