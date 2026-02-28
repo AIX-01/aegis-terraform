@@ -1,0 +1,143 @@
+name: Terraform Destroy
+
+on:
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  TF_VERSION: "1.7.0"
+  AWS_REGION: "ap-northeast-2"
+  WORKING_DIR: "fargate"
+
+jobs:
+  terraform-destroy:
+    name: Terraform Destroy
+    runs-on: ubuntu-latest
+    environment: destroy   # GitHub Environment 보호 규칙 (선택 — 아래 참조)
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Configure AWS Credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # ── 사전 처리 ──────────────────────────────────────────────────
+
+      - name: Scale Down ECS Services
+        run: |
+          CLUSTER=aegis-cluster
+          for svc in aegis-backend aegis-agent-ingest aegis-agent-worker aegis-mediamtx aegis-qdrant; do
+            aws ecs update-service \
+              --cluster $CLUSTER --service $svc --desired-count 0 \
+              --region ${{ env.AWS_REGION }} 2>/dev/null || true
+          done
+          aws ecs wait services-stable \
+            --cluster $CLUSTER \
+            --services aegis-backend aegis-agent-ingest aegis-agent-worker aegis-mediamtx aegis-qdrant \
+            --region ${{ env.AWS_REGION }} 2>/dev/null || true
+
+      - name: Disable RDS Deletion Protection
+        run: |
+          aws rds modify-db-instance \
+            --db-instance-identifier aegis-postgres \
+            --no-deletion-protection \
+            --apply-immediately \
+            --region ${{ env.AWS_REGION }} 2>/dev/null || true
+          # 변경이 적용될 때까지 대기 (보통 수 초)
+          aws rds wait db-instance-available \
+            --db-instance-identifier aegis-postgres \
+            --region ${{ env.AWS_REGION }} 2>/dev/null || true
+
+      - name: Empty S3 Buckets
+        run: |
+          ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
+          CLIPS_BUCKET="aegis-clips-${ACCOUNT_ID}"
+          FRONTEND_BUCKET="aegis-frontend-${ACCOUNT_ID}"
+
+          # clips 버킷 (버저닝 비활성화 — 단순 삭제)
+          aws s3 rm s3://$CLIPS_BUCKET --recursive --region ${{ env.AWS_REGION }} 2>/dev/null || true
+
+          # frontend 버킷 (버저닝 활성화 — 모든 버전 및 delete marker 삭제)
+          for BUCKET in $FRONTEND_BUCKET; do
+            # Object versions
+            while true; do
+              VERSIONS=$(aws s3api list-object-versions \
+                --bucket "$BUCKET" --region ${{ env.AWS_REGION }} \
+                --max-items 1000 \
+                --query '{Objects: Versions[].{Key:Key,VersionId:VersionId}}' \
+                --output json 2>/dev/null || echo '{"Objects":null}')
+              COUNT=$(echo "$VERSIONS" | python3 -c \
+                "import sys,json; d=json.load(sys.stdin); print(len(d.get('Objects') or []))")
+              [ "$COUNT" -eq 0 ] && break
+              aws s3api delete-objects \
+                --bucket "$BUCKET" --delete "$VERSIONS" \
+                --region ${{ env.AWS_REGION }} > /dev/null
+            done
+            # Delete markers
+            while true; do
+              MARKERS=$(aws s3api list-object-versions \
+                --bucket "$BUCKET" --region ${{ env.AWS_REGION }} \
+                --max-items 1000 \
+                --query '{Objects: DeleteMarkers[].{Key:Key,VersionId:VersionId}}' \
+                --output json 2>/dev/null || echo '{"Objects":null}')
+              COUNT=$(echo "$MARKERS" | python3 -c \
+                "import sys,json; d=json.load(sys.stdin); print(len(d.get('Objects') or []))")
+              [ "$COUNT" -eq 0 ] && break
+              aws s3api delete-objects \
+                --bucket "$BUCKET" --delete "$MARKERS" \
+                --region ${{ env.AWS_REGION }} > /dev/null
+            done
+          done
+
+      - name: Delete ECR Images
+        run: |
+          for REPO in aegis/backend aegis/agent; do
+            IMAGE_IDS=$(aws ecr list-images \
+              --repository-name "$REPO" --region ${{ env.AWS_REGION }} \
+              --query 'imageIds[*]' --output json 2>/dev/null || echo '[]')
+            COUNT=$(echo "$IMAGE_IDS" | python3 -c "import sys,json; print(len(json.load(sys.stdin)))")
+            if [ "$COUNT" -gt 0 ]; then
+              aws ecr batch-delete-image \
+                --repository-name "$REPO" \
+                --image-ids "$IMAGE_IDS" \
+                --region ${{ env.AWS_REGION }} > /dev/null
+            fi
+          done
+
+      # ── Terraform Destroy ─────────────────────────────────────────
+
+      - name: Terraform Init
+        working-directory: ${{ env.WORKING_DIR }}
+        run: terraform init
+
+      - name: Terraform Destroy Plan
+        working-directory: ${{ env.WORKING_DIR }}
+        run: terraform plan -destroy -no-color -out=destroy.tfplan
+
+      - name: Terraform Destroy
+        working-directory: ${{ env.WORKING_DIR }}
+        run: terraform apply destroy.tfplan
+
+      # ── 사후 처리 ─────────────────────────────────────────────────
+
+      - name: Force Delete Secrets Manager Secrets
+        if: always()
+        run: |
+          # recovery_window_in_days = 7이므로 destroy 후에도 7일간 이름이 예약됨
+          # 재배포를 위해 즉시 삭제
+          for SECRET in aegis/db-password aegis/jwt-secret aegis/ai-api-keys aegis/tailscale-auth-key; do
+            aws secretsmanager delete-secret \
+              --secret-id $SECRET \
+              --force-delete-without-recovery \
+              --region ${{ env.AWS_REGION }} 2>/dev/null || true
+          done
