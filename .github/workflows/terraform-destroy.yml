@@ -30,6 +30,7 @@ jobs:
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ env.AWS_REGION }}
+          role-duration-seconds: 14400 # 4시간: CloudFront 삭제 등 장시간 작업 대비
 
       # ── 사전 처리 ──────────────────────────────────────────────────
 
@@ -139,13 +140,22 @@ jobs:
         working-directory: ${{ env.WORKING_DIR }}
         run: terraform init
 
-      - name: Terraform Destroy Plan
+      - name: Terraform Destroy (non-IAM resources first)
         working-directory: ${{ env.WORKING_DIR }}
-        run: terraform plan -destroy -no-color -out=destroy.tfplan
+        run: |
+          # IAM 정책 attachment가 먼저 삭제되면 실행 중인 OIDC 세션이 즉시 권한을 잃음
+          # aws_iam_* 리소스를 제외한 나머지를 먼저 삭제하여 세션 권한 유지
+          TARGETS=$(terraform state list 2>/dev/null \
+            | grep -v "^aws_iam_" \
+            | sed 's/^/-target=/' \
+            | tr '\n' ' ')
+          if [ -n "$(echo $TARGETS | tr -d ' ')" ]; then
+            terraform destroy -auto-approve $TARGETS
+          fi
 
-      - name: Terraform Destroy
+      - name: Terraform Destroy (IAM resources last)
         working-directory: ${{ env.WORKING_DIR }}
-        run: terraform apply destroy.tfplan
+        run: terraform destroy -auto-approve
 
       # ── 사후 처리 ─────────────────────────────────────────────────
 

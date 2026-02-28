@@ -219,6 +219,7 @@ resource "aws_iam_openid_connect_provider" "github" {
 
 resource "aws_iam_role" "github_actions" {
   name = "${var.project_name}-github-actions-role"
+  max_session_duration = 14400 # 4시간: destroy가 1시간 이상 소요될 수 있음
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
