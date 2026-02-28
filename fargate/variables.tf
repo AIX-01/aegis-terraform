@@ -217,7 +217,7 @@ variable "service_discovery_namespace" {
 variable "github_org" {
   description = "GitHub organization name"
   type        = string
-  default     = ""
+  default     = "AIX-01"
 }
 
 variable "github_repos" {

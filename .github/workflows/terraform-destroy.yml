@@ -33,6 +33,25 @@ jobs:
 
       # ── 사전 처리 ──────────────────────────────────────────────────
 
+      - name: Force Delete Secrets Manager Secrets (pre-destroy)
+        run: |
+          # terraform destroy 전에 미리 강제 삭제 → destroy 후 7일 복구 창 없이 즉시 재apply 가능
+          for SECRET in aegis/db-password aegis/jwt-secret aegis/ai-api-keys aegis/tailscale-auth-key; do
+            aws secretsmanager delete-secret \
+              --secret-id "$SECRET" \
+              --force-delete-without-recovery \
+              --region ${{ env.AWS_REGION }} 2>/dev/null || true
+          done
+
+      - name: Delete RDS Final Snapshot (pre-destroy)
+        run: |
+          # final_snapshot_identifier가 고정값("aegis-postgres-final")이므로
+          # 이전 destroy에서 생성된 스냅샷이 남아있으면 다음 destroy 시 이름 충돌 발생
+          # 미리 삭제하여 terraform destroy가 동일 이름으로 스냅샷을 생성할 수 있도록 함
+          aws rds delete-db-snapshot \
+            --db-snapshot-identifier aegis-postgres-final \
+            --region ${{ env.AWS_REGION }} 2>/dev/null || true
+
       - name: Scale Down ECS Services
         run: |
           CLUSTER=aegis-cluster
